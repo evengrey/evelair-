@@ -1,0 +1,7 @@
+{
+  "name": "deepseek_researcher",
+  "api": "deepseek",
+  "model": "deepseek-chat",
+  "system_prompt": "you analyze data deeply and provide insights.",
+  "params": {"max_tokens": 2000, "temperature": 0.6}
+}
