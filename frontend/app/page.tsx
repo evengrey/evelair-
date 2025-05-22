@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Send, Settings, Plus, Bot, User, Edit3, MessageSquareText } from 'lucide-react'
+import { Send, Settings, Plus, Bot, User, Edit3, MessageSquare } from 'lucide-react'
 
 interface Message {
   speaker_type: 'user' | 'agent'
@@ -202,7 +202,7 @@ export default function Home() {
                             : 'hover:bg-surface-hover text-secondary hover:text-primary'
                         }`}
                 >
-                    <MessageSquareText size={16} className={threadId === tId ? 'text-accent' : 'text-secondary/80'} />
+                    <MessageSquare size={16} className={threadId === tId ? 'text-accent' : 'text-secondary/80'} />
                     {tId.replace('thread_', 'Chat ')}
                 </button>
             ))}
