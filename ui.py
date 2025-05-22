@@ -1,19 +1,29 @@
 import requests
 import streamlit as st
 from datetime import datetime
+import os
 
 API_URL = "http://localhost:8000"
 
 st.set_page_config(page_title="MAD-LLM Hub", layout="wide")
+st.sidebar.empty()  # hide sidebar until user expands
 
 st.title("🤖 MAD-LLM Hub")
 
 with st.sidebar:
     st.header("Config")
-    openai_key = st.text_input("OpenAI API Key", type="password")
-    anthropic_key = st.text_input("Anthropic API Key", type="password")
-    gemini_key = st.text_input("Gemini API Key", type="password")
-    deepseek_key = st.text_input("Deepseek Key", type="password")
+
+    def get_key(label, env_var):
+        env_val = os.getenv(env_var)
+        if env_val:
+            st.markdown(f"**{label} Key ✓**")
+            return env_val
+        return st.text_input(f"{label} API Key", type="password")
+
+    openai_key     = get_key("OpenAI",      "OPENAI_API_KEY")
+    anthropic_key  = get_key("Anthropic",   "ANTHROPIC_API_KEY")
+    gemini_key     = get_key("Gemini",      "GEMINI_API_KEY")
+    deepseek_key   = get_key("Deepseek",    "DEEPSEEK_API_KEY")
 
     thread_id = st.text_input("Thread ID", value="default")
     if st.button("New Thread"):

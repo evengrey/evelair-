@@ -5,3 +5,5 @@ openai
 anthropic
 google-generativeai
 requests
+
+python-multipart
