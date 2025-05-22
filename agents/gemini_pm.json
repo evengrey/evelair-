@@ -1,0 +1,7 @@
+{
+  "name": "gemini_pm",
+  "api": "gemini",
+  "model": "gemini-pro",
+  "system_prompt": "you are a product manager thinking from user value.",
+  "params": {"max_tokens": 2000, "temperature": 0.6}
+}
