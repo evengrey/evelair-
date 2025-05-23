@@ -29,6 +29,8 @@ const modelOptions: ModelOptions = {
   deepseek: ['deepseek-chat', 'deepseek-coder']
 }
 
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000'
+
 const formatTimestamp = (isoTimestamp?: string): string => {
   if (!isoTimestamp) return '';
   try {
@@ -85,15 +87,19 @@ export default function Home() {
   const loadHistory = async (currentSelectedThreadId: string) => {
     if (!currentSelectedThreadId) return;
     try {
-      const storedMessages = localStorage.getItem(`mad_llm_history_${currentSelectedThreadId}`);
-      if (storedMessages) {
-        setMessages(JSON.parse(storedMessages));
+      const res = await fetch(`${API_BASE}/history/${currentSelectedThreadId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setMessages(data.messages);
+        localStorage.setItem(`mad_llm_history_${currentSelectedThreadId}`, JSON.stringify(data.messages));
       } else {
         setMessages([]);
       }
     } catch (error) {
-      console.error('Failed to load history from localStorage:', error);
-      setMessages([]);
+      console.error('Failed to load history from API:', error);
+      const storedMessages = localStorage.getItem(`mad_llm_history_${currentSelectedThreadId}`);
+      if (storedMessages) setMessages(JSON.parse(storedMessages));
+      else setMessages([]);
     }
   }
 
@@ -117,28 +123,37 @@ export default function Home() {
     setInput('');
 
     try {
-      setTimeout(() => {
-        const activeAgents = agents.filter(agent => agent.enabled);
-        const agentResponses: Message[] = activeAgents.map(agent => ({
-            speaker_type: 'agent',
-            speaker_name: agent.name,
-            content: `Simulated response from ${agent.name} to: "${userMessage.content.substring(0, 20)}..."`,
-            timestamp: new Date().toISOString()
-        }));
-        const finalMessages = [...newMessages, ...agentResponses];
-        setMessages(finalMessages);
-        localStorage.setItem(`mad_llm_history_${threadId}`, JSON.stringify(finalMessages));
-      }, 1000);
+      const res = await fetch(`${API_BASE}/chat?thread_id=${threadId}&message=${encodeURIComponent(input)}`, { method: 'POST' })
+      if (res.ok) {
+        const data = await res.json()
+        const agentResponses: Message[] = data.results.map((r: { agent: string, response: string }) => ({
+          speaker_type: 'agent',
+          speaker_name: r.agent,
+          content: r.response,
+          timestamp: new Date().toISOString()
+        }))
+        const finalMessages = [...newMessages, ...agentResponses]
+        setMessages(finalMessages)
+        localStorage.setItem(`mad_llm_history_${threadId}`, JSON.stringify(finalMessages))
+      }
     } catch (error) {
       console.error('Failed to send message:', error)
-      setMessages(messages);
-      localStorage.setItem(`mad_llm_history_${threadId}`, JSON.stringify(messages));
+      setMessages(messages)
     }
   }
 
   const saveApiKeys = async () => {
     localStorage.setItem('mad_llm_api_keys', JSON.stringify(apiKeys));
-    alert('API Keys saved locally! (This is a demo, keys are not sent to a server)');
+    try {
+      await fetch(`${API_BASE}/setup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(apiKeys)
+      })
+    } catch (e) {
+      console.error('Failed to send API keys to backend:', e)
+    }
+    alert('API Keys saved locally!');
   }
 
   const updateAgent = (index: number, updates: Partial<Agent>) => {

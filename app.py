@@ -1,4 +1,5 @@
 import asyncio
+import json
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -67,13 +68,35 @@ async def upload(thread_id: str, file: UploadFile = File(...)):
 
 
 @app.get("/rag/query")
-async def rag_query():
-    raise HTTPException(status_code=501, detail="Not Implemented")
+async def rag_query(doc_id: str, query: str):
+    """Very naive text search over an uploaded document."""
+    upload = db.get_upload(doc_id)
+    if not upload:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    file_path = UPLOAD_DIR / upload["filename"]
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File missing on disk")
+
+    text = file_path.read_text(encoding="utf-8", errors="ignore")
+    matches = [
+        line.strip()
+        for line in text.splitlines()
+        if query.lower() in line.lower()
+    ]
+    return {"doc_id": doc_id, "matches": matches[:5]}
 
 
 @app.post("/canvas/annotate")
-async def canvas_annotate():
-    raise HTTPException(status_code=501, detail="Not Implemented")
+async def canvas_annotate(doc_id: str, annotation: dict):
+    """Save an annotation JSON blob alongside the document."""
+    path = UPLOAD_DIR / f"{doc_id}.annotations.json"
+    existing = []
+    if path.exists():
+        existing = json.loads(path.read_text())
+    existing.append(annotation)
+    path.write_text(json.dumps(existing))
+    return {"status": "saved", "count": len(existing)}
 
 
 @app.get("/history/{thread_id}")
