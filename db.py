@@ -104,3 +104,25 @@ class ConversationDB:
         ]
         conn.close()
         return docs
+
+    def get_upload(self, doc_id: str) -> Dict | None:
+        """Return a single upload record by document id."""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.execute(
+            """
+            SELECT filename, thread_id, timestamp
+            FROM uploads
+            WHERE doc_id = ?
+            """,
+            (doc_id,),
+        )
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            return {
+                "doc_id": doc_id,
+                "filename": row[0],
+                "thread_id": row[1],
+                "timestamp": row[2],
+            }
+        return None
